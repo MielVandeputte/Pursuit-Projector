@@ -41,6 +41,7 @@ dependencies:
   file_picker: ^5.0.1
   window_manager: ^0.2.7
   audioplayers: ^1.0.1
+  omxplayer_video_player: ^2.1.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:omxplayer_video_player/omxplayer_video_player.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,10 @@ void main() async {
     await windowManager.show();
     await windowManager.focus();
   });
+
+  if (OmxplayerVideoPlayer.isPlatformSidePresent()) {
+    OmxplayerVideoPlayer.useAsImplementation();
+  }
 
   runApp(const MyApp());
 }
@@ -50,7 +55,8 @@ class MyHomePage extends StatefulWidget {
 class MyHomePageState extends State<MyHomePage> {
   int _currentIndex = 0;
 
-  PlatformFile? selectedFile;
+  PlatformFile? selectedAudioFile;
+  PlatformFile? selectedVideoFile;
 
   double sensitivity = 60;
   double pollingRate = 60;
@@ -61,13 +67,17 @@ class MyHomePageState extends State<MyHomePage> {
   final double _minRecommendedPolingRate = 10;
   final double _maxRecommendedPolingRate = 200;
 
-  void _pickFile() async {
+  void _pickFile(String filetype) async {
     FilePickerResult? result = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: ['mp3']);
+        .pickFiles(type: FileType.custom, allowedExtensions: [filetype]);
 
     if (result != null) {
       setState(() {
-        selectedFile = result.files.first;
+        if (filetype == 'mp3') {
+          selectedAudioFile = result.files.first;
+        } else if (filetype == 'mp4') {
+          selectedVideoFile = result.files.last;
+        }
       });
     }
   }
@@ -98,94 +108,191 @@ class MyHomePageState extends State<MyHomePage> {
           displayMode: PaneDisplayMode.top,
           items: [
             PaneItem(
-              icon: Icon(FluentIcons.microphone),
-              title: Text('Listener'),
+              icon: const Icon(FluentIcons.microphone),
+              title: const Text('Listener'),
             ),
             PaneItem(
-              icon: Icon(FluentIcons.settings),
-              title: Text('Settings'),
+              icon: const Icon(FluentIcons.settings),
+              title: const Text('Settings'),
             ),
           ],
         ),
         content: NavigationBody(index: _currentIndex, children: [
           ScaffoldPage(
-              content: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                Column(children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(30.0),
-                    child: Text(
-                      'Song selection',
-                      style: DefaultTextStyle.of(context)
-                          .style
-                          .apply(fontSizeFactor: 2.0),
-                    ),
-                  ),
-                  Button(
-                      child: const Text('Select audio file'),
-                      onPressed: () {
-                        _pickFile();
-                      }),
-                  const Padding(padding: EdgeInsets.symmetric(vertical: 10)),
-                  if (selectedFile == null)
-                    const Text("No file selected")
-                  else
-                    Column(children: <Widget>[
-                      Text(selectedFile?.name.substring(
-                              0, selectedFile?.name.lastIndexOf('.')) ??
-                          ''),
-                      const Padding(padding: EdgeInsets.symmetric(vertical: 1)),
-                      Text(selectedFile?.extension ?? ''),
-                      const Padding(padding: EdgeInsets.symmetric(vertical: 1)),
-                      Text(selectedFile?.path?.substring(
-                              0, selectedFile?.path?.lastIndexOf('\\')) ??
-                          ''),
-                      const Padding(padding: EdgeInsets.symmetric(vertical: 1)),
-                      Text('${selectedFile?.size.toString() ?? '0'} bytes'),
-                    ]),
-                ]),
-                Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(30.0),
-                      child: Text(
-                        'Settings',
-                        style: DefaultTextStyle.of(context)
-                            .style
-                            .apply(fontSizeFactor: 2.0),
-                      ),
-                    ),
-                    const Text('Sensitivity'),
-                    Slider(
-                        value: sensitivity < _minRecommendedSensitivity
-                            ? _minRecommendedPolingRate
-                            : sensitivity > _maxRecommendedSensitivity
-                                ? _maxRecommendedPolingRate
-                                : sensitivity,
-                        min: _minRecommendedSensitivity,
-                        max: _maxRecommendedSensitivity,
-                        onChanged: (s) => {
-                              setState(() => sensitivity = s.round().toDouble())
-                            }),
-                    Text(sensitivity.toString()),
-                    const Padding(padding: EdgeInsets.symmetric(vertical: 10)),
-                    const Text('Polling rate'),
-                    Slider(
-                        value: pollingRate < _minRecommendedPolingRate
-                            ? _minRecommendedPolingRate
-                            : pollingRate > _maxRecommendedPolingRate
-                                ? _maxRecommendedPolingRate
-                                : pollingRate,
-                        min: _minRecommendedPolingRate,
-                        max: _maxRecommendedPolingRate,
-                        onChanged: (s) => {
-                              setState(() => pollingRate = s.round().toDouble())
-                            }),
-                    Text(pollingRate.toString()),
-                  ],
-                )
-              ]))
+              content: Container(
+                  margin: const EdgeInsets.all(20.0),
+                  child: Column(children: [
+                    Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                              flex: 5,
+                              child: Column(children: <Widget>[
+                                Text(
+                                  'Song selection',
+                                  style: DefaultTextStyle.of(context)
+                                      .style
+                                      .apply(fontSizeFactor: 2.0),
+                                ),
+                                const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 10)),
+                                Button(
+                                    child: const Text('Select audio file'),
+                                    onPressed: () {
+                                      _pickFile('mp3');
+                                    }),
+                                const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 10)),
+                                if (selectedAudioFile == null)
+                                  const Text("No file selected")
+                                else
+                                  Column(children: <Widget>[
+                                    Text(selectedAudioFile?.name.substring(
+                                            0,
+                                            selectedAudioFile?.name
+                                                .lastIndexOf('.')) ??
+                                        ''),
+                                    const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 1)),
+                                    Text(selectedAudioFile?.extension ?? ''),
+                                    const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 1)),
+                                    Text(selectedAudioFile?.path?.substring(
+                                            0,
+                                            selectedAudioFile?.path
+                                                ?.lastIndexOf('\\')) ??
+                                        ''),
+                                    const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 1)),
+                                    Text(
+                                        '${selectedAudioFile?.size.toString() ?? '0'} bytes'),
+                                  ]),
+                              ])),
+                          Expanded(
+                              flex: 5,
+                              child: Column(children: <Widget>[
+                                Text(
+                                  'Video selection',
+                                  style: DefaultTextStyle.of(context)
+                                      .style
+                                      .apply(fontSizeFactor: 2.0),
+                                ),
+                                const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 10)),
+                                Button(
+                                    child: const Text('Select video file'),
+                                    onPressed: () {
+                                      _pickFile('mp4');
+                                    }),
+                                const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 10)),
+                                if (selectedVideoFile == null)
+                                  const Text("No file selected")
+                                else
+                                  Column(children: <Widget>[
+                                    Text(selectedVideoFile?.name.substring(
+                                            0,
+                                            selectedVideoFile?.name
+                                                .lastIndexOf('.')) ??
+                                        ''),
+                                    const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 1)),
+                                    Text(selectedVideoFile?.extension ?? ''),
+                                    const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 1)),
+                                    Text(selectedVideoFile?.path?.substring(
+                                            0,
+                                            selectedVideoFile?.path
+                                                ?.lastIndexOf('\\')) ??
+                                        ''),
+                                    const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 1)),
+                                    Text(
+                                        '${selectedVideoFile?.size.toString() ?? '0'} bytes'),
+                                  ]),
+                              ])),
+                          Expanded(
+                              flex: 5,
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Settings',
+                                    style: DefaultTextStyle.of(context)
+                                        .style
+                                        .apply(fontSizeFactor: 2.0),
+                                  ),
+                                  const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 10)),
+                                  const Text('Sensitivity'),
+                                  ConstrainedBox(
+                                      constraints:
+                                          const BoxConstraints(maxWidth: 250),
+                                      child: Slider(
+                                          value: sensitivity <
+                                                  _minRecommendedSensitivity
+                                              ? _minRecommendedPolingRate
+                                              : sensitivity >
+                                                      _maxRecommendedSensitivity
+                                                  ? _maxRecommendedPolingRate
+                                                  : sensitivity,
+                                          min: _minRecommendedSensitivity,
+                                          max: _maxRecommendedSensitivity,
+                                          onChanged: (s) => {
+                                                setState(() => sensitivity =
+                                                    s.round().toDouble())
+                                              })),
+                                  Text(sensitivity.toString()),
+                                  const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 10)),
+                                  const Text('Polling rate'),
+                                  ConstrainedBox(
+                                      constraints:
+                                          const BoxConstraints(maxWidth: 250),
+                                      child: Slider(
+                                          value: pollingRate <
+                                                  _minRecommendedPolingRate
+                                              ? _minRecommendedPolingRate
+                                              : pollingRate >
+                                                      _maxRecommendedPolingRate
+                                                  ? _maxRecommendedPolingRate
+                                                  : pollingRate,
+                                          min: _minRecommendedPolingRate,
+                                          max: _maxRecommendedPolingRate,
+                                          onChanged: (s) => {
+                                                setState(() => pollingRate =
+                                                    s.round().toDouble())
+                                              })),
+                                  Text(pollingRate.toString()),
+                                ],
+                              ))
+                        ]),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Button(
+                            child: const Text('Listen & Test'),
+                            onPressed: () => {}),
+                        const Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 100)),
+                        Button(
+                            child: const Text('Listen & Present'),
+                            onPressed: () => {}),
+                      ],
+                    )
+                  ])))
         ]));
   }
 }

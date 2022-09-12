@@ -1,7 +1,11 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:omxplayer_video_player/omxplayer_video_player.dart';
+import 'package:wav/wav.dart';
+import 'package:matrix2d/matrix2d.dart';
+import 'package:quiver/iterables.dart';
+// ignore: import_of_legacy_library_into_null_safe
+import 'package:iirjdart/butterworth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,10 +20,6 @@ void main() async {
     await windowManager.show();
     await windowManager.focus();
   });
-
-  if (OmxplayerVideoPlayer.isPlatformSidePresent()) {
-    OmxplayerVideoPlayer.useAsImplementation();
-  }
 
   runApp(const MyApp());
 }
@@ -67,14 +67,38 @@ class MyHomePageState extends State<MyHomePage> {
   final double _minRecommendedPolingRate = 10;
   final double _maxRecommendedPolingRate = 200;
 
+  void _convertWav(String filepath) async {
+    Matrix2d m2d = const Matrix2d();
+
+    final wav = await Wav.readFile(filepath);
+
+    //add channels to create mono
+    List<double> mono =
+        m2d.addition(wav.channels[0], wav.channels[1]).cast<double>();
+    mono = mono.map((a) => a / 2).toList();
+
+    //lowpass filter from 44.1 kHz to 11.025 kHz => fc = 0.25
+    Butterworth butterworth = Butterworth();
+    butterworth.lowPass(100, 441000, 11025);
+    Iterable<double> lowPass = mono.map((s) => butterworth.filter(s));
+
+    //downsampling by 4
+    List<List<double>> splitDownSample = partition(lowPass, 4).toList();
+    Iterable<double> downSample =
+        splitDownSample.map((e) => e.reduce((a, b) => a + b) / 4);
+
+    //Fast Fourier Transform
+  }
+
   void _pickFile(String filetype) async {
     FilePickerResult? result = await FilePicker.platform
         .pickFiles(type: FileType.custom, allowedExtensions: [filetype]);
 
     if (result != null) {
       setState(() {
-        if (filetype == 'mp3') {
+        if (filetype == 'wav') {
           selectedAudioFile = result.files.first;
+          _convertWav(selectedAudioFile!.path!);
         } else if (filetype == 'mp4') {
           selectedVideoFile = result.files.last;
         }
@@ -140,7 +164,7 @@ class MyHomePageState extends State<MyHomePage> {
                                 Button(
                                     child: const Text('Select audio file'),
                                     onPressed: () {
-                                      _pickFile('mp3');
+                                      _pickFile('wav');
                                     }),
                                 const Padding(
                                     padding:

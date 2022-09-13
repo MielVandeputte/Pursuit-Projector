@@ -5,24 +5,26 @@ import 'package:flutter/foundation.dart';
 import 'package:iirjdart/butterworth.dart';
 import 'package:matrix2d/matrix2d.dart';
 import 'package:quiver/iterables.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:wav/wav.dart';
-import 'dart:io';
-import 'dart:math';
-import 'package:pmap/pmap.dart';
+import 'logger.dart';
 
 class Engine {
-  final BehaviorSubject _progress = BehaviorSubject<bool>.seeded(false);
-  Stream get progressStream$ => _progress.stream;
+  Iterable<Iterable<double>>? _referenceSong;
 
-  Future<void> convertWav(String filepath) {
-    return compute(_convertWav, filepath);
+  void convertWav(String filepath) async {
+    logger.addLog(
+        'Import ${filepath.substring(filepath.lastIndexOf('\\'))}: Import started');
+
+    _referenceSong = await compute(_convertWav, filepath);
+
+    logger.addLog(
+        'Import ${filepath.substring(filepath.lastIndexOf('\\'))}: Import completed');
   }
 }
 
 Engine engine = Engine();
 
-void _convertWav(String filepath) async {
+Future<Iterable<Iterable<double>>> _convertWav(String filepath) async {
   Matrix2d m2d = const Matrix2d();
 
   //import wav
@@ -53,19 +55,12 @@ void _convertWav(String filepath) async {
   });
 
   //filtering bins with highest energy
-  final results = spectogram.map((e) => filterBins(e));
+  Iterable<Iterable<double>> results = spectogram.map((e) => _filterBins(e));
 
-  print(results);
-
-  //checking
-  await File("test.txt").writeAsString(results.toList().toString());
-  await File("spectogram.txt").writeAsString(spectogram.toString());
-  print('samples: ${spectogram.shape[0]}');
-  print('bins: ${spectogram.shape[1]}');
-  print('transform complete');
+  return results;
 }
 
-filterBins(Float64List input) {
+Iterable<double> _filterBins(Float64List input) {
   int start = 0;
   int end = 10;
 

@@ -11,13 +11,13 @@ class Settings extends StatefulWidget {
 
 class SettingsState extends State<Settings> {
   double sensitivity = 60;
-  double pollingRate = 60;
+  double pollingRate = 512;
 
   final double _minRecommendedSensitivity = 10;
   final double _maxRecommendedSensitivity = 200;
 
-  final double _minRecommendedPolingRate = 10;
-  final double _maxRecommendedPolingRate = 200;
+  final double _minRecommendedPolingRate = 8;
+  final double _maxRecommendedPolingRate = 4096;
 
   @override
   Widget build(BuildContext context) {

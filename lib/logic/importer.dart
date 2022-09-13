@@ -15,7 +15,7 @@ class Importer {
     if (result != null) {
       if (filetype == 'wav') {
         _selectedAudioFile.add(result.files.first);
-        await engine.convertWav(result.files.first.path.toString());
+        engine.convertWav(result.files.first.path.toString());
       } else if (filetype == 'mp4') {
         _selectedVideoFile.add(result.files.first);
       }

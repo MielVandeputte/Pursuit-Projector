@@ -24,10 +24,12 @@ class HomeScreenState extends State<HomeScreen> {
     return ScaffoldPage(
         content: Container(
             margin: const EdgeInsets.all(20.0),
-            child: Row(children: const [
-              Controls(),
-              Padding(padding: EdgeInsets.symmetric(horizontal: 10)),
-              Expanded(child: Status())
-            ])));
+            child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: const [
+                  Controls(),
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 10)),
+                  Expanded(child: Status())
+                ])));
   }
 }

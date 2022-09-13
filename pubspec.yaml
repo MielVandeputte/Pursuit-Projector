@@ -45,6 +45,7 @@ dependencies:
   iirjdart: ^0.0.1
   fftea: ^1.2.0+1
   rxdart: ^0.27.5
+  pmap: ^0.3.0
 
 dev_dependencies:
   flutter_test:

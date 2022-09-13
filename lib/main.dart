@@ -10,7 +10,7 @@ void main() async {
 
   WindowOptions windowOptions = const WindowOptions(
       titleBarStyle: TitleBarStyle.hidden,
-      minimumSize: Size(900, 300),
+      minimumSize: Size(800, 300),
       size: Size(1200, 900));
 
   windowManager.waitUntilReadyToShow(windowOptions, () async {

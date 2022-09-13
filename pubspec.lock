@@ -189,6 +189,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.2"
+  pmap:
+    dependency: "direct main"
+    description:
+      name: pmap
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.3.0"
   quiver:
     dependency: "direct main"
     description:

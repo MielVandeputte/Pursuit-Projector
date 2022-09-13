@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:iirjdart/butterworth.dart';
@@ -8,6 +7,9 @@ import 'package:matrix2d/matrix2d.dart';
 import 'package:quiver/iterables.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:wav/wav.dart';
+import 'dart:io';
+import 'dart:math';
+import 'package:pmap/pmap.dart';
 
 class Engine {
   final BehaviorSubject _progress = BehaviorSubject<bool>.seeded(false);
@@ -42,11 +44,48 @@ void _convertWav(String filepath) async {
       splitDownSample.map((e) => e.reduce((a, b) => a + b) / 4);
 
   //Fast Fourier Transform
-  const chunkSize = 4500;
-  final stft = STFT(chunkSize, Window.hanning(chunkSize));
+  const windowSize = 512;
+  final stft = STFT(windowSize, Window.hanning(windowSize));
 
   final spectogram = <Float64List>[];
   stft.run(downSample.toList(), (Float64x2List freq) {
     spectogram.add(freq.discardConjugates().magnitudes());
   });
+
+  //filtering bins with highest energy
+  final results = spectogram.map((e) => filterBins(e));
+
+  print(results);
+
+  //checking
+  await File("test.txt").writeAsString(results.toList().toString());
+  await File("spectogram.txt").writeAsString(spectogram.toString());
+  print('samples: ${spectogram.shape[0]}');
+  print('bins: ${spectogram.shape[1]}');
+  print('transform complete');
+}
+
+filterBins(Float64List input) {
+  int start = 0;
+  int end = 10;
+
+  List<double> maxValues = [];
+
+  while (start < input.shape[0]) {
+    if (end > input.shape[0] + 1) {
+      end = input.shape[0];
+    }
+
+    maxValues.add(input
+        .sublist(start, end)
+        .reduce(((value, element) => value > element ? value : element)));
+
+    start = end;
+    end *= 2;
+  }
+
+  return maxValues.where((e) =>
+      e >=
+      (maxValues.reduce(((value, element) => value + element)) /
+          maxValues.length));
 }

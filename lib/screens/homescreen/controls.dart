@@ -1,5 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:pursuit_projector/engine.dart';
+import '../../logic/importer.dart';
 
 class Controls extends StatefulWidget {
   const Controls({super.key});
@@ -20,7 +20,7 @@ class ControlsState extends State<Controls> {
           SizedBox(
               width: 400,
               child: StreamBuilder(
-                  stream: engine.audioFileStream$,
+                  stream: importer.audioFileStream$,
                   builder: (BuildContext context, AsyncSnapshot snap) {
                     return Card(
                         padding: const EdgeInsets.all(30),
@@ -38,7 +38,7 @@ class ControlsState extends State<Controls> {
                           Button(
                               child: const Text('Select audio file'),
                               onPressed: () {
-                                engine.pickFile('wav');
+                                importer.pickFile('wav');
                               }),
                           const Padding(
                               padding: EdgeInsets.symmetric(vertical: 10)),
@@ -65,7 +65,7 @@ class ControlsState extends State<Controls> {
           SizedBox(
               width: 400,
               child: StreamBuilder(
-                  stream: engine.videoFileStream$,
+                  stream: importer.videoFileStream$,
                   builder: (BuildContext context, AsyncSnapshot snap) {
                     return Card(
                         padding: const EdgeInsets.all(30),
@@ -83,7 +83,7 @@ class ControlsState extends State<Controls> {
                           Button(
                               child: const Text('Select video file'),
                               onPressed: () {
-                                engine.pickFile('mp4');
+                                importer.pickFile('mp4');
                               }),
                           const Padding(
                               padding: EdgeInsets.symmetric(vertical: 10)),

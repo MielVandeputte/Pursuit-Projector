@@ -10,29 +10,6 @@ import 'package:rxdart/rxdart.dart';
 import 'package:wav/wav.dart';
 
 class Engine {
-  //File picker
-  final BehaviorSubject _selectedAudioFile = BehaviorSubject<PlatformFile>();
-  final BehaviorSubject _selectedVideoFile = BehaviorSubject<PlatformFile>();
-
-  Stream get audioFileStream$ => _selectedAudioFile.stream;
-  Stream get videoFileStream$ => _selectedVideoFile.stream;
-
-  void pickFile(String filetype) async {
-    FilePickerResult? result = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: [filetype]);
-    if (result != null) {
-      if (filetype == 'wav') {
-        _selectedAudioFile.add(result.files.first);
-        _progress.add(true);
-        await convertWav(result.files.first.path.toString());
-        _progress.add(false);
-      } else if (filetype == 'mp4') {
-        _selectedVideoFile.add(result.files.first);
-      }
-    }
-  }
-
-  //convert wav engine
   final BehaviorSubject _progress = BehaviorSubject<bool>.seeded(false);
   Stream get progressStream$ => _progress.stream;
 
@@ -46,6 +23,7 @@ Engine engine = Engine();
 void _convertWav(String filepath) async {
   Matrix2d m2d = const Matrix2d();
 
+  //import wav
   final wav = await Wav.readFile(filepath);
 
   //add channels to create mono

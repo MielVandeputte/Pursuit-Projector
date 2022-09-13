@@ -1,7 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:pursuit_projector/homescreen/controls.dart';
-import 'package:pursuit_projector/homescreen/status.dart';
+import 'package:pursuit_projector/screens/homescreen/controls.dart';
+import 'package:pursuit_projector/screens/homescreen/status.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

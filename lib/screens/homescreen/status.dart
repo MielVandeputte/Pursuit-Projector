@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 
-import '../engine.dart';
+import '../../logic/engine.dart';
 
 class Status extends StatefulWidget {
   const Status({super.key});
@@ -24,9 +24,7 @@ class StatusState extends State<Status> {
             StreamBuilder(
                 stream: engine.progressStream$,
                 builder: (BuildContext context, AsyncSnapshot snap) {
-                  return snap.data
-                      ? const ProgressRing()
-                      : const Text("Niets aan het laden");
+                  return const ProgressRing();
                 }),
           ])
         ]))),

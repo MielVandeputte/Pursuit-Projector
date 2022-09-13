@@ -1,17 +1,17 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:pursuit_projector/homescreen/homescreen.dart';
+import 'package:pursuit_projector/screens/homescreen/homescreen.dart';
 import 'package:window_manager/window_manager.dart';
-import 'settings.dart';
-import 'about.dart';
+import 'screens/settings.dart';
+import 'screens/about.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = const WindowOptions(
-    center: true,
-    titleBarStyle: TitleBarStyle.hidden,
-  );
+      titleBarStyle: TitleBarStyle.hidden,
+      minimumSize: Size(900, 300),
+      size: Size(1200, 900));
 
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();

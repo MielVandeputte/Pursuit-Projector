@@ -24,7 +24,9 @@ class StatusState extends State<Status> {
             StreamBuilder(
                 stream: engine.progressStream$,
                 builder: (BuildContext context, AsyncSnapshot snap) {
-                  return ProgressRing(value: snap.data);
+                  return snap.data
+                      ? const ProgressRing()
+                      : const Text("Niets aan het laden");
                 }),
           ])
         ]))),

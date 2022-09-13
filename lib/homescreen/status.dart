@@ -1,5 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 
+import '../engine.dart';
+
 class Status extends StatefulWidget {
   const Status({super.key});
 
@@ -12,12 +14,20 @@ class Status extends StatefulWidget {
 class StatusState extends State<Status> {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
       children: [
-        Column(
-          children: const [ProgressRing(value: 35)],
-        )
+        Expanded(
+            child: Card(
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            StreamBuilder(
+                stream: engine.progressStream$,
+                builder: (BuildContext context, AsyncSnapshot snap) {
+                  return ProgressRing(value: snap.data);
+                }),
+          ])
+        ]))),
       ],
     );
   }

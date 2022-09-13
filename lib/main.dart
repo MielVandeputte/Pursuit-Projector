@@ -1,7 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:pursuit_projector/homescreen/homescreen.dart';
 import 'package:window_manager/window_manager.dart';
-
 import 'settings.dart';
 import 'about.dart';
 

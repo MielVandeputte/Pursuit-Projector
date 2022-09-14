@@ -9,6 +9,13 @@ import 'package:quiver/iterables.dart';
 import 'package:wav/wav.dart';
 import 'logger.dart';
 
+class Match {
+  int weight = 1;
+  int currentSample = 0;
+
+  Match(this.currentSample);
+}
+
 class Engine {
   Iterable<Iterable<int>>? _referenceSong;
 
@@ -24,10 +31,49 @@ class Engine {
   }
 
   void compareToAmbientSound() async {
-    Iterable<Iterable<int>>? soundSnippet = await _generateSoundFingerPrint(
-        {'fp': 'C:\\Users\\vande\\Desktop\\begin moved.wav', 'fac': '1'});
+    Iterable<Iterable<int>>? soundSnippet1 = await _generateSoundFingerPrint(
+        {'fp': "C:\\Users\\vande\\Desktop\\pursuit1.wav", 'fac': '1'});
 
-//begin te vergelijken vanaf startsample
+    Iterable<Iterable<int>>? soundSnippet2 = await _generateSoundFingerPrint(
+        {'fp': "C:\\Users\\vande\\Desktop\\pursuit2.wav", 'fac': '1'});
+
+    Iterable<Iterable<int>>? soundSnippet3 = await _generateSoundFingerPrint(
+        {'fp': "C:\\Users\\vande\\Desktop\\pursuit3.wav", 'fac': '1'});
+
+    final soundsnippets = [soundSnippet1, soundSnippet2, soundSnippet3];
+
+    List<Match> _matches = [];
+
+    for (var soundSnippet in soundsnippets) {
+      for (int i in findMatches(soundSnippet)) {
+        Match? matchingMatch;
+
+        for (Match m in _matches) {
+          if (m.currentSample + 25 == i) {
+            matchingMatch = m;
+            break;
+          }
+        }
+
+        if (matchingMatch != null) {
+          matchingMatch.weight += 1;
+          matchingMatch.currentSample = i;
+        } else {
+          _matches.add(Match(i));
+        }
+      }
+
+      _matches.forEach((element) {
+        print('cS: ${element.currentSample} | weight: ${element.weight}');
+      });
+
+      print('_______________');
+    }
+  }
+
+  List<int> findMatches(Iterable<Iterable<int>> soundSnippet) {
+    List<int> tempMatches = [];
+
     for (int startSample = 0;
         startSample < _referenceSong!.length;
         startSample++) {
@@ -40,16 +86,12 @@ class Engine {
         j++;
 
         if (i >= _referenceSong!.length || j >= soundSnippet.length) {
-          print("match found at $startSample");
+          tempMatches.add(startSample);
           break;
         }
       }
     }
-    print('out');
-    File('reference.txt').writeAsString(
-        _referenceSong!.toList().toString().replaceAll('],', '],\n'));
-    File('snip.txt').writeAsString(
-        soundSnippet.toList().toString().replaceAll('],', '],\n'));
+    return tempMatches;
   }
 
   bool checkSamplePartOfSample(Iterable<int> a, Iterable<int> b) {
@@ -90,7 +132,7 @@ Future<Iterable<Iterable<int>>> _generateSoundFingerPrint(
       splitDownSample.map((e) => e.reduce((a, b) => a + b) / 4);
 
   //Fast Fourier Transform
-  const windowSize = 512;
+  const windowSize = 441;
   final stft = STFT(windowSize, Window.hanning(windowSize));
 
   final spectogram = <Float64List>[];

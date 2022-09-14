@@ -8,6 +8,8 @@ import 'package:matrix2d/matrix2d.dart';
 import 'package:quiver/iterables.dart';
 import 'package:wav/wav.dart';
 import 'logger.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Match {
   int weight = 1;
@@ -28,6 +30,27 @@ class Engine {
 
     logger.addLog(
         'Import ${filepath.substring(filepath.lastIndexOf('\\'))}: Import completed');
+  }
+
+  void getAudioStream() async {
+    final record = Record();
+    Directory docDir = await getApplicationDocumentsDirectory();
+    String dirPath = '${docDir.path}\\PursuitProjector\\audiofile';
+    int i = 0;
+    int j = 0;
+
+    while (j < 40) {
+      await record.start(encoder: AudioEncoder.wav, path: '$dirPath$i');
+
+      await Future.delayed(const Duration(seconds: 2));
+
+      String? path = await record.stop();
+
+      await Future.delayed(const Duration(milliseconds: 20));
+
+      i = (i + 1) % 10;
+      j++;
+    }
   }
 
   void compareToAmbientSound() async {

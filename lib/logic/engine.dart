@@ -40,7 +40,19 @@ class Engine {
     Iterable<Iterable<int>>? soundSnippet3 = await _generateSoundFingerPrint(
         {'fp': "C:\\Users\\vande\\Desktop\\pursuit3.wav", 'fac': '1'});
 
-    final soundsnippets = [soundSnippet1, soundSnippet2, soundSnippet3];
+    Iterable<Iterable<int>>? soundSnippet4 = await _generateSoundFingerPrint(
+        {'fp': "C:\\Users\\vande\\Desktop\\pursuit4.wav", 'fac': '1'});
+
+    Iterable<Iterable<int>>? soundSnippet5 = await _generateSoundFingerPrint(
+        {'fp': "C:\\Users\\vande\\Desktop\\pursuit5.wav", 'fac': '1'});
+
+    final soundsnippets = [
+      soundSnippet1,
+      soundSnippet2,
+      soundSnippet3,
+      soundSnippet4,
+      soundSnippet5
+    ];
 
     List<Match> _matches = [];
 
@@ -68,6 +80,10 @@ class Engine {
       });
 
       print('_______________');
+
+      Match maxWeightMatch = _matches.reduce(
+          (value, element) => value.weight > element.weight ? value : element);
+      logger.addLog('Matched at ${maxWeightMatch.currentSample}');
     }
   }
 
@@ -169,13 +185,13 @@ List<int> _filterBins(Float64List input, int factor) {
   double average = maxValues.reduce(((value, element) => value + element)) /
       maxValues.length;
 
-  List<int> qualifyingbins = [];
+  List<int> qualifyingBins = [];
 
   for (int i = 0; i < input.length; i++) {
     if (input.elementAt(i) > average * factor) {
-      qualifyingbins.add(i);
+      qualifyingBins.add(i);
     }
   }
 
-  return qualifyingbins;
+  return qualifyingBins;
 }

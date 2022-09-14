@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
 import 'package:flutter/foundation.dart';
@@ -9,22 +10,65 @@ import 'package:wav/wav.dart';
 import 'logger.dart';
 
 class Engine {
-  Iterable<Iterable<double>>? _referenceSong;
+  Iterable<Iterable<int>>? _referenceSong;
 
-  void convertWav(String filepath) async {
+  void importReferenceSong(String filepath) async {
     logger.addLog(
         'Import ${filepath.substring(filepath.lastIndexOf('\\'))}: Import started');
 
-    _referenceSong = await compute(_convertWav, filepath);
+    _referenceSong =
+        await compute(_generateSoundFingerPrint, {'fp': filepath, 'fac': '3'});
 
     logger.addLog(
         'Import ${filepath.substring(filepath.lastIndexOf('\\'))}: Import completed');
+  }
+
+  void compareToAmbientSound() async {
+    Iterable<Iterable<int>>? soundSnippet = await _generateSoundFingerPrint(
+        {'fp': 'C:\\Users\\vande\\Desktop\\begin moved.wav', 'fac': '1'});
+
+//begin te vergelijken vanaf startsample
+    for (int startSample = 0;
+        startSample < _referenceSong!.length;
+        startSample++) {
+      int i = startSample;
+      int j = 0;
+
+      while (checkSamplePartOfSample(
+          _referenceSong!.elementAt(i), soundSnippet.elementAt(j))) {
+        i++;
+        j++;
+
+        if (i >= _referenceSong!.length || j >= soundSnippet.length) {
+          print("match found at $startSample");
+          break;
+        }
+      }
+    }
+    print('out');
+    File('reference.txt').writeAsString(
+        _referenceSong!.toList().toString().replaceAll('],', '],\n'));
+    File('snip.txt').writeAsString(
+        soundSnippet.toList().toString().replaceAll('],', '],\n'));
+  }
+
+  bool checkSamplePartOfSample(Iterable<int> a, Iterable<int> b) {
+    for (int i in a) {
+      if (!b.contains(i)) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 
 Engine engine = Engine();
 
-Future<Iterable<Iterable<double>>> _convertWav(String filepath) async {
+Future<Iterable<Iterable<int>>> _generateSoundFingerPrint(
+    Map<String, String> args) async {
+  String filepath = args['fp'].toString();
+  int factor = int.parse(args['fac'].toString());
+
   Matrix2d m2d = const Matrix2d();
 
   //import wav
@@ -55,12 +99,13 @@ Future<Iterable<Iterable<double>>> _convertWav(String filepath) async {
   });
 
   //filtering bins with highest energy
-  Iterable<Iterable<double>> results = spectogram.map((e) => _filterBins(e));
+  Iterable<Iterable<int>> results =
+      spectogram.map((e) => _filterBins(e, factor));
 
   return results;
 }
 
-Iterable<double> _filterBins(Float64List input) {
+List<int> _filterBins(Float64List input, int factor) {
   int start = 0;
   int end = 10;
 
@@ -79,8 +124,16 @@ Iterable<double> _filterBins(Float64List input) {
     end *= 2;
   }
 
-  return maxValues.where((e) =>
-      e >=
-      (maxValues.reduce(((value, element) => value + element)) /
-          maxValues.length));
+  double average = maxValues.reduce(((value, element) => value + element)) /
+      maxValues.length;
+
+  List<int> qualifyingbins = [];
+
+  for (int i = 0; i < input.length; i++) {
+    if (input.elementAt(i) > average * factor) {
+      qualifyingbins.add(i);
+    }
+  }
+
+  return qualifyingbins;
 }

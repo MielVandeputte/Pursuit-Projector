@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  record_linux
   screen_retriever
   window_manager
 )

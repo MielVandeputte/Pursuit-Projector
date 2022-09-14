@@ -46,6 +46,7 @@ dependencies:
   fftea: ^1.2.0+1
   rxdart: ^0.27.5
   pmap: ^0.3.0
+  record: ^4.4.0
 
 dev_dependencies:
   flutter_test:

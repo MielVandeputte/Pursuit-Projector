@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:pursuit_projector/logic/engine.dart';
 import '../../logic/importer.dart';
 
 class Controls extends StatefulWidget {
@@ -110,7 +111,9 @@ class ControlsState extends State<Controls> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Button(child: const Text('Listen & Test'), onPressed: () => {}),
+              Button(
+                  child: const Text('Listen & Test'),
+                  onPressed: () => {engine.compareToAmbientSound()}),
               const Padding(padding: EdgeInsets.symmetric(horizontal: 10)),
               Button(
                   child: const Text('Listen & Present'), onPressed: () => {}),

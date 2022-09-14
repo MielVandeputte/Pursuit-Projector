@@ -15,7 +15,7 @@ class Importer {
     if (result != null) {
       if (filetype == 'wav') {
         _selectedAudioFile.add(result.files.first);
-        engine.convertWav(result.files.first.path.toString());
+        engine.importReferenceSong(result.files.first.path.toString());
       } else if (filetype == 'mp4') {
         _selectedVideoFile.add(result.files.first);
       }

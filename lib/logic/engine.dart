@@ -20,15 +20,14 @@ class Match {
 }
 
 class Engine {
-  List<List<int>>? _referenceSong;
+  List<Float64List>? _referenceSpectogram;
   final List<Match> _matches = [];
 
   void importReferenceSong(String filepath) async {
     logger.addLog(
         'Import ${filepath.substring(filepath.lastIndexOf('\\'))}: Import started');
 
-    _referenceSong =
-        await compute(_generateSoundFingerPrint, {'fp': filepath, 'fac': '3'});
+    _referenceSpectogram = await compute(_generateSpectogram, filepath);
 
     logger.addLog(
         'Import ${filepath.substring(filepath.lastIndexOf('\\'))}: Import completed');
@@ -68,20 +67,20 @@ class Engine {
     }
   }
 
-  void compareToAmbientSound(String filepath) async {
-    List<List<int>>? soundSnippet =
-        await _generateSoundFingerPrint({'fp': filepath, 'fac': '1'});
-  }
+  void compareToAmbientSound(String filepath) async {}
 
   void findMatches(List<List<int>> soundSnippet) {
     for (int startingSample = 0;
-        startingSample < _referenceSong!.length - 40;
+        startingSample < _referenceSpectogram!.length - 40;
         startingSample++) {
       int totalScore = 0;
 
+      List<List<int>>? filteredSpectogram = _filterBins(
+          _referenceSpectogram!.sublist(startingSample, startingSample + 40),
+          false);
+
       for (int i = 0; i < 40; i++) {
-        totalScore += checkSample(soundSnippet[i],
-            _referenceSong!.sublist(startingSample, startingSample + 40)[i]);
+        totalScore += checkSample(soundSnippet[i], filteredSpectogram![i]);
       }
 
       print('start sample: $startingSample, total score: $totalScore');
@@ -104,11 +103,17 @@ class Engine {
   }
 
   void testFunction() async {
-    final original = await _generateSoundFingerPrint(
-        {'fp': "C:\\Users\\vande\\Desktop\\speakershort.wav", 'fac': '1'});
+    final original = await _generateSpectogram(
+        "C:\\Users\\vande\\Desktop\\pursuit speakerrecording.wav");
 
-    File('C:\\Users\\vande\\Desktop\\shortenedspeaker.txt').writeAsStringSync(
-        original!.toList().toString().replaceAll('],', '],\n'));
+    int startingSample = 300;
+
+    List<List<int>>? filteredSpectogram = _filterBins(
+        original!.sublist(startingSample, startingSample + 40), true);
+
+    File('C:\\Users\\vande\\Desktop\\wedtest\\speaker shortened.txt')
+        .writeAsStringSync(
+            filteredSpectogram!.toList().toString().replaceAll('],', '],\n'));
 
     print('done');
   }
@@ -116,12 +121,8 @@ class Engine {
 
 Engine engine = Engine();
 
-//Converts WAV file to a usable spectogram
-Future<List<List<int>>?> _generateSoundFingerPrint(
-    Map<String, String> args) async {
-  String filepath = args['fp'].toString();
-  int factor = int.parse(args['fac'].toString());
-
+//Converts WAV file to a spectogram
+Future<List<Float64List>> _generateSpectogram(String filepath) async {
   Matrix2d m2d = const Matrix2d();
 
   //import wav
@@ -164,14 +165,19 @@ Future<List<List<int>>?> _generateSoundFingerPrint(
     spectogram.add(freq.discardConjugates().magnitudes());
   });
 
-  //filtering bins with highest energy
-  List<List<int>>? results = _filterBins(spectogram, factor);
-
-  return results;
+  return spectogram;
 }
 
 //Calculates which bins in a given sample are outliers for that particular bin
-List<List<int>>? _filterBins(List<Float64List> input, int factor) {
+List<List<int>>? _filterBins(List<Float64List> input, bool ambient) {
+  double factor = 0;
+
+  if (ambient) {
+    factor = 1.5;
+  } else {
+    factor = 2;
+  }
+
   //Calculate 3rd quartile for the volume of each bin over the total length/all samples of the audioclip
   List<double> lowLimit = List.filled(input[0].length, 0);
 
@@ -181,7 +187,7 @@ List<List<int>>? _filterBins(List<Float64List> input, int factor) {
 
     // 1.5 * 3rd quartile is the edge where outliers begin in statistics
     // any bin value for a given sample above this edge is an outlier for that bin
-    lowLimit[i] = temp[(temp.length * 0.75).round()] * 1.5;
+    lowLimit[i] = temp[(temp.length * 0.75).round()] * factor;
   }
 
   //For each sample, keep the indexes of the bins which are outliers

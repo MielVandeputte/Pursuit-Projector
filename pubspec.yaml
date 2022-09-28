@@ -47,6 +47,8 @@ dependencies:
   rxdart: ^0.27.5
   pmap: ^0.3.0
   record: ^4.4.0
+  path_provider: ^2.0.11
+  numdart: ^1.0.0
 
 dev_dependencies:
   flutter_test:

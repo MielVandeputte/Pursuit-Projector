@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
@@ -19,7 +20,8 @@ class Match {
 }
 
 class Engine {
-  Iterable<Iterable<int>>? _referenceSong;
+  List<List<int>>? _referenceSong;
+  final List<Match> _matches = [];
 
   void importReferenceSong(String filepath) async {
     logger.addLog(
@@ -34,118 +36,88 @@ class Engine {
 
   void getAudioStream() async {
     final record = Record();
+
     Directory docDir = await getApplicationDocumentsDirectory();
+    Directory('${docDir.path}\\PursuitProjector').deleteSync(recursive: true);
+
     String dirPath = '${docDir.path}\\PursuitProjector\\audiofile';
+
+    _matches.clear();
+
     int i = 0;
     int j = 0;
 
-    while (j < 40) {
+    while (j < 20) {
       await record.start(encoder: AudioEncoder.wav, path: '$dirPath$i');
 
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 4));
 
-      String? path = await record.stop();
+      String? filepath = await record.stop();
 
-      await Future.delayed(const Duration(milliseconds: 20));
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (filepath != null) {
+        print('analyzing $filepath');
+        compareToAmbientSound(filepath);
+      } else {
+        print('null detected');
+      }
 
       i = (i + 1) % 10;
       j++;
     }
   }
 
-  void compareToAmbientSound() async {
-    Iterable<Iterable<int>>? soundSnippet1 = await _generateSoundFingerPrint(
-        {'fp': "C:\\Users\\vande\\Desktop\\pursuit1.wav", 'fac': '1'});
+  void compareToAmbientSound(String filepath) async {
+    List<List<int>>? soundSnippet =
+        await _generateSoundFingerPrint({'fp': filepath, 'fac': '1'});
+  }
 
-    Iterable<Iterable<int>>? soundSnippet2 = await _generateSoundFingerPrint(
-        {'fp': "C:\\Users\\vande\\Desktop\\pursuit2.wav", 'fac': '1'});
+  void findMatches(List<List<int>> soundSnippet) {
+    for (int startingSample = 0;
+        startingSample < _referenceSong!.length - 40;
+        startingSample++) {
+      int totalScore = 0;
 
-    Iterable<Iterable<int>>? soundSnippet3 = await _generateSoundFingerPrint(
-        {'fp': "C:\\Users\\vande\\Desktop\\pursuit3.wav", 'fac': '1'});
-
-    Iterable<Iterable<int>>? soundSnippet4 = await _generateSoundFingerPrint(
-        {'fp': "C:\\Users\\vande\\Desktop\\pursuit4.wav", 'fac': '1'});
-
-    Iterable<Iterable<int>>? soundSnippet5 = await _generateSoundFingerPrint(
-        {'fp': "C:\\Users\\vande\\Desktop\\pursuit5.wav", 'fac': '1'});
-
-    final soundsnippets = [
-      soundSnippet1,
-      soundSnippet2,
-      soundSnippet3,
-      soundSnippet4,
-      soundSnippet5
-    ];
-
-    List<Match> _matches = [];
-
-    for (var soundSnippet in soundsnippets) {
-      for (int i in findMatches(soundSnippet)) {
-        Match? matchingMatch;
-
-        for (Match m in _matches) {
-          if (m.currentSample + 25 == i) {
-            matchingMatch = m;
-            break;
-          }
-        }
-
-        if (matchingMatch != null) {
-          matchingMatch.weight += 1;
-          matchingMatch.currentSample = i;
-        } else {
-          _matches.add(Match(i));
-        }
+      for (int i = 0; i < 40; i++) {
+        totalScore += checkSample(soundSnippet[i],
+            _referenceSong!.sublist(startingSample, startingSample + 40)[i]);
       }
 
-      _matches.forEach((element) {
-        print('cS: ${element.currentSample} | weight: ${element.weight}');
-      });
-
-      print('_______________');
-
-      Match maxWeightMatch = _matches.reduce(
-          (value, element) => value.weight > element.weight ? value : element);
-      logger.addLog('Matched at ${maxWeightMatch.currentSample}');
+      print('start sample: $startingSample, total score: $totalScore');
     }
   }
 
-  List<int> findMatches(Iterable<Iterable<int>> soundSnippet) {
-    List<int> tempMatches = [];
+  int checkSample(Iterable<int> ambient, Iterable<int> original) {
+    int score = 0;
 
-    for (int startSample = 0;
-        startSample < _referenceSong!.length;
-        startSample++) {
-      int i = startSample;
-      int j = 0;
-
-      while (checkSamplePartOfSample(
-          _referenceSong!.elementAt(i), soundSnippet.elementAt(j))) {
-        i++;
-        j++;
-
-        if (i >= _referenceSong!.length || j >= soundSnippet.length) {
-          tempMatches.add(startSample);
-          break;
-        }
+    for (int i in original) {
+      if (ambient.contains(i)) {
+        score += 2;
+      } else if (ambient.contains(i + 1) || ambient.contains(i - 1)) {
+        score++;
+      } else {
+        score--;
       }
     }
-    return tempMatches;
+    return score;
   }
 
-  bool checkSamplePartOfSample(Iterable<int> a, Iterable<int> b) {
-    for (int i in a) {
-      if (!b.contains(i)) {
-        return false;
-      }
-    }
-    return true;
+  void testFunction() async {
+    final original = await _generateSoundFingerPrint(
+        {'fp': "C:\\Users\\vande\\Desktop\\speakershort.wav", 'fac': '1'});
+
+    File('C:\\Users\\vande\\Desktop\\shortenedspeaker.txt').writeAsStringSync(
+        original!.toList().toString().replaceAll('],', '],\n'));
+
+    print('done');
   }
 }
 
 Engine engine = Engine();
 
-Future<Iterable<Iterable<int>>> _generateSoundFingerPrint(
+//Converts WAV file to a usable spectogram
+Future<List<List<int>>?> _generateSoundFingerPrint(
     Map<String, String> args) async {
   String filepath = args['fp'].toString();
   int factor = int.parse(args['fac'].toString());
@@ -155,23 +127,36 @@ Future<Iterable<Iterable<int>>> _generateSoundFingerPrint(
   //import wav
   final wav = await Wav.readFile(filepath);
 
-  //add channels to create mono
+  //add channels together to create mono
   List<double> mono =
       m2d.addition(wav.channels[0], wav.channels[1]).cast<double>();
   mono = mono.map((a) => a / 2).toList();
 
-  //lowpass filter from 44.1 kHz to 11.025 kHz => fc = 0.25
+  //lowpass filter of 5.5 kHz
   Butterworth butterworth = Butterworth();
-  butterworth.lowPass(100, 441000, 11025);
+  butterworth.lowPass(100, 44100, 5500);
   Iterable<double> lowPass = mono.map((s) => butterworth.filter(s));
 
-  //downsampling by 4
+  //Downsampling by 4: from 44.1 kHz to 11.025 kHz
+  //Theorem of Nyquist-Shannon: sampling rate must be strictly greater than 2*frequency of signal
+  //Result after: signal from 0 to 5.5 kHz, sampled at 11.025 kHz
   List<List<double>> splitDownSample = partition(lowPass, 4).toList();
   Iterable<double> downSample =
       splitDownSample.map((e) => e.reduce((a, b) => a + b) / 4);
 
   //Fast Fourier Transform
-  const windowSize = 441;
+
+  //windowSize defines the amount of samples used to define a bin,
+  //a larger windowSize makes for a more accurate bin which increases the amount of bins
+
+  //at a sampling rate of 11.025 kHz, every sample lasts 1/11.025kHz
+  //so every calculation of bins considers windowsSize * 1/11.025 seconds in length = 0.1 seconds
+
+  //size of bin/frequency resolution equals sampling rate divided by windowSize = 10.77 Hz
+  //dividing sampling rate by freq resolution gets you the edges of the bins and amount of bins
+  //these repeat 1 time so the amount of unique bins is half = 513
+
+  const windowSize = 1024;
   final stft = STFT(windowSize, Window.hanning(windowSize));
 
   final spectogram = <Float64List>[];
@@ -180,41 +165,36 @@ Future<Iterable<Iterable<int>>> _generateSoundFingerPrint(
   });
 
   //filtering bins with highest energy
-  Iterable<Iterable<int>> results =
-      spectogram.map((e) => _filterBins(e, factor));
+  List<List<int>>? results = _filterBins(spectogram, factor);
 
   return results;
 }
 
-List<int> _filterBins(Float64List input, int factor) {
-  int start = 0;
-  int end = 10;
+//Calculates which bins in a given sample are outliers for that particular bin
+List<List<int>>? _filterBins(List<Float64List> input, int factor) {
+  //Calculate 3rd quartile for the volume of each bin over the total length/all samples of the audioclip
+  List<double> lowLimit = List.filled(input[0].length, 0);
 
-  List<double> maxValues = [];
+  for (int i = 0; i < input[0].length; i++) {
+    List<double> temp = input.map((e) => e[i]).toList();
+    temp.sort();
 
-  while (start < input.shape[0]) {
-    if (end > input.shape[0] + 1) {
-      end = input.shape[0];
-    }
-
-    maxValues.add(input
-        .sublist(start, end)
-        .reduce(((value, element) => value > element ? value : element)));
-
-    start = end;
-    end *= 2;
+    // 1.5 * 3rd quartile is the edge where outliers begin in statistics
+    // any bin value for a given sample above this edge is an outlier for that bin
+    lowLimit[i] = temp[(temp.length * 0.75).round()] * 1.5;
   }
 
-  double average = maxValues.reduce(((value, element) => value + element)) /
-      maxValues.length;
-
-  List<int> qualifyingBins = [];
+  //For each sample, keep the indexes of the bins which are outliers
+  List<List<int>> outcomes = List.empty(growable: true);
 
   for (int i = 0; i < input.length; i++) {
-    if (input.elementAt(i) > average * factor) {
-      qualifyingBins.add(i);
+    List<int> temp = List.empty(growable: true);
+    for (int j = 0; j < input[0].length; j++) {
+      if (input[i][j] > lowLimit[j]) {
+        temp.add(j);
+      }
     }
+    outcomes.add(temp);
   }
-
-  return qualifyingBins;
+  return outcomes;
 }

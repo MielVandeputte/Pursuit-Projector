@@ -113,10 +113,11 @@ class ControlsState extends State<Controls> {
             children: [
               Button(
                   child: const Text('Listen & Test'),
-                  onPressed: () => {engine.compareToAmbientSound()}),
+                  onPressed: () => {engine.getAudioStream()}),
               const Padding(padding: EdgeInsets.symmetric(horizontal: 10)),
               Button(
-                  child: const Text('Listen & Present'), onPressed: () => {}),
+                  child: const Text('Listen & Present'),
+                  onPressed: () => {engine.testFunction()}),
             ],
           ),
         ])));
